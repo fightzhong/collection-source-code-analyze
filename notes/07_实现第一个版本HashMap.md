@@ -34,7 +34,7 @@ private static class Node<K, V> {
     this.key = key;
     this.val = val;
     this.parent = parent;
-    this.hashCode = key.hashCode(); // 对键key对应的hashCode进行一下赋值
+    this.hashCode = key == null ? 0 : key.hashCode(); // 对键key对应的hashCode进行一下赋值
   }
 }
 ```
@@ -75,7 +75,7 @@ public int index (K key) {
   if ( key == null )
     return 0;
 
-  int hashCode = key.hashCode();
+  int hashCode = key == null ? 0 : key.hashCode();
   /*
     由于传入的key中hashCode方法计算得到的哈希值是key自带的
     我们对hashCode再进行一次计算, 这样就可以更加好的减少哈希冲突,
@@ -225,4 +225,4 @@ public V get (K key) {
 }
 ```
 
-> 关于删除的方法就不列出来了, 因为删除的方法跟添加的方法是类似的, 只需要将RBTree中对应的方法拿过来, 然后将Node<E>改为Node<K, V>, 将ele改为key, 将root改为table[index(node.key)]即可, 如果需要查看可以去源代码目录下找到HashMapV1进行查看, 而get方法和node方法之所以列出来是因为下一个版本的HashMap需要对这两个方法进行一下说明
+> 关于删除的方法就不列出来了, 因为删除的方法跟添加的方法是类似的, 只需要将RBTree中对应的方法拿过来, 然后将Node<E>改为Node<K, V>, 将ele改为key, 将root改为table[index(node.key)]即可, 需要注意的是, 在remove方法中被删除的节点存在两个孩子节点的情况下, 我们需要找到后继节点来替换被删除节点, 即用后继节点的内容替换原来节点的内容, 这里有一个注意点, 那就是节点的hashCode属性也需要进行替换, 如果需要查看可以去源代码目录下找到HashMapV1进行查看

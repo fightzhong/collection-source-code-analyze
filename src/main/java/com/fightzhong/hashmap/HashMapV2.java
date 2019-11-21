@@ -25,7 +25,7 @@ public class HashMapV2<K, V> {
 			this.key = key;
 			this.val = val;
 			this.parent = parent;
-			this.hashCode = key.hashCode();
+			this.hashCode = key == null ? 0 : key.hashCode();
 		}
 	}
 
@@ -120,6 +120,95 @@ public class HashMapV2<K, V> {
 		return null;
 	}
 
+	// 删除一个元素
+	public V remove (K key) {
+		Node<K, V> node = node(key);
+		if ( node == null ) // 如果被删除的元素不存在, 直接返回即可
+			return null;
+
+		remove( node );
+
+		if ( table[index( key )] != null )
+			table[index( key )].color = BLACK;
+
+		return node.val;
+	}
+
+	private void remove (Node<K, V> node) {
+
+		if ( hasTwoChild( node ) ) {
+			Node<K, V> s = successor(node);
+			node.val = s.val;
+			node.hashCode = s.hashCode;
+			node.key = s.key;
+
+			node = s; // 使得后继节点作为待删除的节点进行删除
+		}
+
+		Node<K, V> replacement = node.left == null ? node.right : node.left;
+		Node<K, V> parent = node.parent;
+
+		if ( replacement != null ) {
+			replacement.parent = parent;
+
+			// 只有当parent不为空的情况下才去判断将replacement放在parent的left还是right
+			if ( parent != null ) {
+				int cmp = compare( parent.key, node.key );
+
+				if ( cmp > 0 ) {
+					parent.left = replacement;
+				} else {
+					parent.right = replacement;
+				}
+			} else { // parent为空, 则replacement成为新的根节点
+				table[index( node.key )] = replacement;
+			}
+
+		} else {
+			if ( parent != null ) {
+				int cmp = compare( parent.key, node.key );
+
+				if ( cmp > 0 ) {
+					parent.left = null;
+				} else {
+					parent.right = null;
+				}
+			} else {
+				table[index( node.key )] = null;
+			}
+		}
+
+		// node一定不为空
+		fixAfterDeletion( node, replacement );
+		size --;
+	}
+
+	public int compare (K key1, K key2) {
+		int cmp = 0;
+		int hashCode1 = key1.hashCode();
+		int hashCode2 = key2.hashCode();
+
+		if ( hashCode1 > hashCode2 ) {
+			cmp = 1;
+		} else if ( hashCode1 < hashCode2 ) {
+			cmp = -1;
+		} else { // hashCode1 == hashCode2
+			if ( Objects.equals( key1, key2 ) ) {
+				cmp = 0;
+			} else {
+				if ( key1 != null && key2 != null
+					&& key1.getClass() == key2.getClass()
+					&& key1 instanceof Comparable ) {
+					cmp = ((Comparable) key1).compareTo( key2 );
+				} else {
+					cmp = System.identityHashCode( key1 ) - System.identityHashCode( key2 );
+				}
+			}
+		}
+
+		return cmp;
+	}
+
 	public V get (K key) {
 		Node<K, V> node = node(key);
 		return node == null ? null : node.val;
@@ -144,7 +233,7 @@ public class HashMapV2<K, V> {
 			hashCode1: 当前比较的key对应的哈希值
 		*/
 		K key1 = key;
-		int hashCode1 = key.hashCode();
+		int hashCode1 = key == null ? 0 : key.hashCode();
 
 		while ( node != null ) {
 			K key2 = node.key;
@@ -226,6 +315,74 @@ public class HashMapV2<K, V> {
 
 			// 将当前grandParent当作上一层的新增节点, 继续判断是否在上一层会发生上溢的情况
 			fixAfterInsertion( grandParent );
+		}
+	}
+
+	private void fixAfterDeletion (Node<K, V> node, Node<K, V> replacement) {
+		if ( isRed( node ) )
+			return;
+
+		if ( isRed( replacement ) ) {
+			color( replacement, BLACK );
+			return;
+		}
+
+		if ( node.parent == null )
+			return;
+
+		Node<K, V> parent = node.parent; // 父节点
+		boolean left = parent.left == null || parent.left == node; // version2: 被删除节点的方向, true为在左边
+		Node<K, V> sibling = left ? parent.right : parent.left;  // 被删除节点在删除前的兄弟节点, 应该通过left以及parent来判断
+
+		if ( left ) {
+			if ( isRed( sibling ) ) {
+				color( sibling, BLACK );
+				color( parent, RED );
+				leftRotate( parent );
+				sibling = parent.right; // todo
+			}
+
+			if ( isBlack( sibling.left ) && isBlack( sibling.right ) ) {
+				boolean parentBlack = parent.color == BLACK;
+				color( parent, BLACK );
+				color( sibling, RED );
+
+				if ( parentBlack )
+					fixAfterDeletion( parent, null );
+			} else {
+				if ( isBlack( sibling.right ) ) { // LR
+					sibling = rightRotate( sibling );
+				}
+				color( sibling, parent.color );
+				color( parent, BLACK );
+				color( sibling.right, BLACK );
+				parent = leftRotate( parent );
+			}
+		} else {
+			if ( isRed( sibling ) ) {
+				color( sibling, BLACK );
+				color( parent, RED );
+				rightRotate( parent );
+				sibling = parent.left;
+			}
+
+			if ( isBlack( sibling.left ) && isBlack( sibling.right ) ) {
+				boolean parentBlack = parent.color == BLACK;
+				color( parent, BLACK );
+				color( sibling, RED );
+
+				if ( parentBlack )
+					fixAfterDeletion( parent, null );
+
+			} else { // 兄弟节点至少有一个红色子节点
+				if ( isBlack( sibling.left ) ) { // LR
+					sibling = leftRotate( sibling );
+				}
+				color( sibling, parent.color );
+				color( parent, BLACK );
+				color( sibling.left, BLACK );
+				parent = rightRotate( parent );
+			}
 		}
 	}
 
