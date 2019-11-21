@@ -127,12 +127,14 @@ public class HashMapV3<K, V> {
 		if ( node == null ) // 如果被删除的元素不存在, 直接返回即可
 			return null;
 
+		V ret = node.val;
+
 		remove( node );
 
 		if ( table[index( key )] != null )
 			table[index( key )].color = BLACK;
 
-		return node.val;
+		return ret;
 	}
 
 	private void remove (Node<K, V> node) {
