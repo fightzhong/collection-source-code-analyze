@@ -51,4 +51,9 @@ key有时候并不具备可比较性, 如一个自定义对象Parent, 那么在�
     * [version2-HashMap](notes/09_实现第二个版本的HashMap.md)
     * [version3-HashMap解决compareTo问题](notes/10_实现第三个版本的HashMap解决compareTo问题.md)
     * [version4-HashMap实现扩容机制](notes/11_实现第四个版本的HashMap实现扩容机制.md)
+  * java中Map源码分析
+    * [JDK7中HashMap源码分析](notes/12_JDK7中HashMap源码分析.md)
+    * [JDK7中ConcurrentHashMap源码分析](notes/13_JDK7中ConcurrentHashMap源码分析.md)
+    * [JDK8中HashMap源码分析](notes/14_JDK8中HashMap源码分析.md)
+
 
